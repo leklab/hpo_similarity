@@ -124,6 +124,35 @@ def get_simGIC_score(hpo_graph, proband_1, proband_2):
     
     return max(scores)
 
+def get_ERIC_score(hpo_graph, proband_1, proband_2):
+    """ calculate the similarity of HPO terms across different individuals.
+
+    Reference: https://www.nature.com/articles/s41436-019-0439-8
+    Li et al., Genetics in Medicine (2019)
+
+    Args:
+        hpo_graph: ICSimilarity object for the HPO term graph, with
+            information on how many times each term has been used across all
+            probands.
+        proband_1: list of HPO terms for one proband
+        proband_2: list of HPO terms for the other proband 
+
+    """
+
+    scores = []
+    for term_1 in proband_1:
+        for term_2 in proband_2:
+            a = hpo_graph.calculate_information_content(term_1)
+            b = hpo_graph.calculate_information_content(term_2)
+            common = 2 * hpo_graph.get_most_informative_ic(term_1, term_2)
+            minimum = min(a,b)
+            if minimum >= common:
+                scores.append(0)
+            else:
+                scores.append(common-minimum)
+
+    return(max(scores))
+
 def get_proband_similarity(hpo_graph, probands, score_type="resnik"):
     """ calculate the similarity of HPO terms across different individuals.
     
@@ -146,7 +175,7 @@ def get_proband_similarity(hpo_graph, probands, score_type="resnik"):
     
     # pick the function to calculate the proband pairwise scores with
     funcs = {"resnik": get_resnik_score, "simGIC": get_simGIC_score, \
-        "lin": get_lin_score}
+        "lin": get_lin_score, "eric": get_ERIC_score}
     get_score = funcs[score_type]
     
     ic_scores = []
